@@ -1,5 +1,5 @@
 /**
- * Core Flappysky Simulation — Classic Physics, Rounded Blue Pillars, and Collectible Likes
+ * Core Flappysky Simulation — Classic Physics, Rounded-Rectangle Blue Posts, and Collectible Likes
  */
 
 export const VIRTUAL_HEIGHT = 540;
@@ -14,9 +14,9 @@ const FLAP_VELOCITY = -355;
 const BASE_SCROLL_SPEED = 215;
 const MAX_SCROLL_SPEED = 295;
 const GAP_HEIGHT = 168;
-const PILLAR_SPACING = 290;
+const POST_SPACING = 290;
 
-const PILLAR_POINTS = 1;
+const POST_POINTS = 1;
 const LIKE_POINTS = 1;
 const BEST_SCORE_KEY = 'flappysky_best_score';
 
@@ -24,19 +24,14 @@ function clamp(val, min, max) {
   return Math.max(min, Math.min(max, val));
 }
 
-function distSqToSegment(px, py, ax, ay, bx, by) {
-  const abx = bx - ax;
-  const aby = by - ay;
-  const apx = px - ax;
-  const apy = py - ay;
-  const abLenSq = abx * abx + aby * aby;
-  if (abLenSq === 0) return apx * apx + apy * apy;
-  const t = clamp((apx * abx + apy * aby) / abLenSq, 0, 1);
-  const cx = ax + abx * t;
-  const cy = ay + aby * t;
-  const dx = px - cx;
-  const dy = py - cy;
-  return dx * dx + dy * dy;
+function circleIntersectsRoundedRect(cx, cy, crCircle, rx, ry, rw, rh, rCorner) {
+  const r = Math.min(rCorner, rw * 0.5, rh * 0.5);
+  const closestX = clamp(cx, rx + r, rx + rw - r);
+  const closestY = clamp(cy, ry + r, ry + rh - r);
+  const dx = cx - closestX;
+  const dy = cy - closestY;
+  const totalR = crCircle + r;
+  return dx * dx + dy * dy < totalR * totalR;
 }
 
 export class FlappyskyGame {
@@ -53,7 +48,7 @@ export class FlappyskyGame {
 
     this.bestScore = this.loadBestScore();
     this.score = 0;
-    this.pillarsCleared = 0;
+    this.postsCleared = 0;
     this.likesCollected = 0;
     this.isNewBest = false;
 
@@ -65,7 +60,7 @@ export class FlappyskyGame {
     this.floorFrontScroll = 0;
     this.floorMidScroll = 0;
 
-    this.pillars = [];
+    this.posts = [];
     this.likes = [];
     this.particles = [];
     this.popups = [];
@@ -125,7 +120,7 @@ export class FlappyskyGame {
   }
 
   get currentScrollSpeed() {
-    const ramp = Math.min(1, this.pillarsCleared / 35);
+    const ramp = Math.min(1, this.postsCleared / 35);
     return BASE_SCROLL_SPEED + (MAX_SCROLL_SPEED - BASE_SCROLL_SPEED) * ramp;
   }
 
@@ -136,10 +131,10 @@ export class FlappyskyGame {
 
   resetRun() {
     this.score = 0;
-    this.pillarsCleared = 0;
+    this.postsCleared = 0;
     this.likesCollected = 0;
     this.isNewBest = false;
-    this.pillars = [];
+    this.posts = [];
     this.likes = [];
     this.particles = [];
     this.popups = [];
@@ -242,7 +237,7 @@ export class FlappyskyGame {
   seedInitialObstacles() {
     const startX = Math.max(this.butterfly.x + 360, this.virtualWidth * 0.72);
     for (let i = 0; i < 4; i++) {
-      this.spawnSection(startX + i * PILLAR_SPACING);
+      this.spawnSection(startX + i * POST_SPACING);
     }
   }
 
@@ -250,7 +245,8 @@ export class FlappyskyGame {
     this.spawnCounter += 1;
     const index = this.spawnCounter;
     const width = 72;
-    const radius = width / 2;
+    const halfWidth = width / 2;
+    const cornerRadius = 12;
 
     const paletteIndex = this.paletteCursor % 6;
     this.paletteCursor += 1;
@@ -258,8 +254,8 @@ export class FlappyskyGame {
     const minGapY = CEILING_Y + 58 + GAP_HEIGHT / 2;
     const maxGapY = FLOOR_Y - 58 - GAP_HEIGHT / 2;
     const prevGapY =
-      this.pillars.length > 0
-        ? this.pillars[this.pillars.length - 1].gapY
+      this.posts.length > 0
+        ? this.posts[this.posts.length - 1].gapY
         : VIRTUAL_HEIGHT * 0.47;
     const maxDelta = 135;
     const targetGapY = clamp(
@@ -271,10 +267,11 @@ export class FlappyskyGame {
     const topEnd = targetGapY - GAP_HEIGHT / 2;
     const bottomStart = targetGapY + GAP_HEIGHT / 2;
 
-    this.pillars.push({
+    this.posts.push({
       x,
       width,
-      radius,
+      halfWidth,
+      cornerRadius,
       gapY: targetGapY,
       gapHeight: GAP_HEIGHT,
       topEnd,
@@ -297,7 +294,7 @@ export class FlappyskyGame {
           collected: false
         });
       } else {
-        const midX = x + PILLAR_SPACING * 0.5;
+        const midX = x + POST_SPACING * 0.5;
         const midY = clamp(
           targetGapY + (Math.random() - 0.5) * 95,
           CEILING_Y + 80,
@@ -408,24 +405,24 @@ export class FlappyskyGame {
       return;
     }
 
-    // Scroll pillars & Likes
+    // Scroll posts & Likes
     const speed = this.currentScrollSpeed;
-    for (const pillar of this.pillars) {
-      pillar.x -= speed * safeDt;
+    for (const post of this.posts) {
+      post.x -= speed * safeDt;
 
-      if (!pillar.scored && pillar.x + pillar.radius < this.butterfly.x) {
-        pillar.scored = true;
-        this.pillarsCleared += 1;
-        this.addPoints(PILLAR_POINTS);
+      if (!post.scored && post.x + post.halfWidth < this.butterfly.x) {
+        post.scored = true;
+        this.postsCleared += 1;
+        this.addPoints(POST_POINTS);
         this.audio.playScore();
 
-        // Blue +1 pop-up when clearing a set of pillars
+        // Blue +1 pop-up when clearing a set of posts
         this.popups.push({
           x: this.butterfly.x + 6,
           y: this.butterfly.y - 24,
           vy: -44,
           life: 1,
-          text: `+${PILLAR_POINTS}`,
+          text: `+${POST_POINTS}`,
           color: '#0085FF'
         });
       }
@@ -438,20 +435,20 @@ export class FlappyskyGame {
 
     // Keep horizon populated across any screen aspect ratio
     const rightmostX =
-      this.pillars.length > 0 ? this.pillars[this.pillars.length - 1].x : this.butterfly.x;
+      this.posts.length > 0 ? this.posts[this.posts.length - 1].x : this.butterfly.x;
     if (rightmostX < this.virtualWidth + 240) {
-      this.spawnSection(rightmostX + PILLAR_SPACING);
+      this.spawnSection(rightmostX + POST_SPACING);
     }
 
     // Prune off-screen entities
-    this.pillars = this.pillars.filter((pl) => pl.x + pl.radius > -100);
+    this.posts = this.posts.filter((p) => p.x + p.halfWidth > -100);
     this.likes = this.likes.filter((lk) => !lk.collected && lk.x + lk.radius > -80);
 
     // Check collectible Likes
     this.checkLikePickups(reducedMotion);
 
-    // Check Rounded Pillar Collisions
-    if (this.checkPillarCollisions()) {
+    // Check Rounded-Rectangle Post Collisions
+    if (this.checkPostCollisions()) {
       this.triggerGameOver(reducedMotion);
     }
   }
@@ -533,27 +530,45 @@ export class FlappyskyGame {
     }
   }
 
-  checkPillarCollisions() {
+  checkPostCollisions() {
     const bx = this.butterfly.x;
     const by = this.butterfly.y;
     const br = this.butterfly.radius;
 
-    for (const pillar of this.pillars) {
-      if (Math.abs(bx - pillar.x) > pillar.radius + br + 8) continue;
+    for (const post of this.posts) {
+      if (Math.abs(bx - post.x) > post.halfWidth + br + 8) continue;
 
-      const capRadiusSumSq = (pillar.radius + br) * (pillar.radius + br);
+      const left = post.x - post.halfWidth;
 
-      // Top rounded pillar capsule: vertical spine from -40 to (topEnd - radius)
-      const topSpineEnd = pillar.topEnd - pillar.radius;
-      if (distSqToSegment(bx, by, pillar.x, -40, pillar.x, topSpineEnd) < capRadiusSumSq) {
+      // Top rounded-rectangle post
+      if (
+        post.topEnd > 0 &&
+        circleIntersectsRoundedRect(
+          bx,
+          by,
+          br,
+          left,
+          -24,
+          post.width,
+          post.topEnd + 24,
+          post.cornerRadius
+        )
+      ) {
         return true;
       }
 
-      // Bottom rounded pillar capsule: vertical spine from (bottomStart + radius) to VIRTUAL_HEIGHT + 40
-      const botSpineStart = pillar.bottomStart + pillar.radius;
+      // Bottom rounded-rectangle post
       if (
-        distSqToSegment(bx, by, pillar.x, botSpineStart, pillar.x, VIRTUAL_HEIGHT + 40) <
-        capRadiusSumSq
+        circleIntersectsRoundedRect(
+          bx,
+          by,
+          br,
+          left,
+          post.bottomStart,
+          post.width,
+          VIRTUAL_HEIGHT - post.bottomStart + 24,
+          post.cornerRadius
+        )
       ) {
         return true;
       }
@@ -590,7 +605,7 @@ export class FlappyskyGame {
       this.onGameOver({
         score: this.score,
         best: this.bestScore,
-        pillars: this.pillarsCleared,
+        posts: this.postsCleared,
         likes: this.likesCollected,
         isNewBest: this.isNewBest
       });

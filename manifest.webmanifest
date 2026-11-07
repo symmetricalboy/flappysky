@@ -1,7 +1,7 @@
 {
   "name": "Flappysky",
   "short_name": "Flappysky",
-  "description": "Flutter through rounded blue pillars, dodge white spikes, and collect red hearts in Flappysky!",
+  "description": "Flutter between blue posts and collect floating Likes in Flappysky!",
   "start_url": "./index.html",
   "display": "fullscreen",
   "orientation": "landscape",

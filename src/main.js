@@ -15,6 +15,7 @@ const mainMenu = document.getElementById('main-menu');
 const pauseMenu = document.getElementById('pause-menu');
 const gameoverMenu = document.getElementById('gameover-menu');
 const rotateSplash = document.getElementById('rotate-splash');
+const fullscreenSplash = document.getElementById('fullscreen-splash');
 const liveAnnouncer = document.getElementById('live-announcer');
 
 const btnPlay = document.getElementById('btn-play');
@@ -37,15 +38,19 @@ const btnRetry = document.getElementById('btn-retry');
 const btnGameoverHome = document.getElementById('btn-gameover-home');
 const goScore = document.getElementById('go-score');
 const goBest = document.getElementById('go-best');
-const goPillars = document.getElementById('go-pillars');
+const goPosts = document.getElementById('go-posts');
 const goLikes = document.getElementById('go-likes');
 const newBestBadge = document.getElementById('new-best-badge');
 
 const btnRotateFullscreen = document.getElementById('btn-rotate-fullscreen');
+const btnEnterFullscreen = document.getElementById('btn-enter-fullscreen');
 
 const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 const coarsePointerQuery = window.matchMedia('(pointer: coarse)');
 const noHoverQuery = window.matchMedia('(hover: none)');
+const standaloneDisplayQuery = window.matchMedia(
+  '(display-mode: fullscreen), (display-mode: standalone)'
+);
 
 const audio = new AudioController();
 const renderer = new FlappyskyRenderer(canvas);
@@ -73,7 +78,27 @@ function isPortraitOrientation() {
 }
 
 function isFullscreenActive() {
-  return Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+  return Boolean(
+    document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      standaloneDisplayQuery.matches ||
+      navigator.standalone === true
+  );
+}
+
+function canRequestFullscreen() {
+  const root = document.documentElement;
+  if (typeof root.requestFullscreen === 'function') {
+    return document.fullscreenEnabled !== false;
+  }
+  if (typeof root.webkitRequestFullscreen === 'function') {
+    return document.webkitFullscreenEnabled !== false;
+  }
+  return false;
+}
+
+function isMobileGateOpen() {
+  return !rotateSplash.hidden || !fullscreenSplash.hidden;
 }
 
 function showToast(message) {
@@ -129,12 +154,16 @@ function toggleFullscreen() {
         screen.orientation.lock('landscape').catch(() => {});
       }
       syncFullscreenButtons();
+      handleViewportAndOrientation();
     })
     .catch(() => {
       showToast(
-        'Browser blocked Full Screen in this window — press F11 or open http://localhost:3000 in a standard tab.'
+        isMobileDevice()
+          ? 'Browser blocked Fullscreen — open Flappysky in Chrome or your system browser.'
+          : 'Browser blocked Full Screen in this window — press F11 or open http://localhost:3000 in a standard tab.'
       );
       syncFullscreenButtons();
+      handleViewportAndOrientation();
     });
 }
 
@@ -163,7 +192,7 @@ function announcePolite(message) {
 }
 
 function getActiveOverlayNav() {
-  if (!rotateSplash.hidden) return null;
+  if (isMobileGateOpen()) return null;
   if (!mainMenu.hidden) return mainMenu.querySelector('[data-spatial-nav]');
   if (!pauseMenu.hidden) return pauseMenu.querySelector('[data-spatial-nav]');
   if (!gameoverMenu.hidden) return gameoverMenu.querySelector('[data-spatial-nav]');
@@ -173,6 +202,10 @@ function getActiveOverlayNav() {
 function focusActiveMenuDefault(state) {
   if (!rotateSplash.hidden) {
     btnRotateFullscreen.focus();
+    return;
+  }
+  if (!fullscreenSplash.hidden) {
+    btnEnterFullscreen.focus();
     return;
   }
   if (state === 'menu') {
@@ -195,8 +228,8 @@ const game = new FlappyskyGame({
     hudBest.textContent = String(best);
     menuBestScore.textContent = String(best);
   },
-  onGameOver({ score, best, pillars, likes, isNewBest }) {
-    goPillars.textContent = String(pillars);
+  onGameOver({ score, best, posts, likes, isNewBest }) {
+    goPosts.textContent = String(posts);
     goLikes.textContent = String(likes);
     goScore.textContent = String(score);
     goBest.textContent = String(best);
@@ -204,7 +237,7 @@ const game = new FlappyskyGame({
     menuBestScore.textContent = String(best);
 
     announcePolite(
-      `${pillars} Pillars Cleared plus ${likes} Likes Collected equals ${score} Final Score. Best Score ${best}.`
+      `${posts} Posts Cleared plus ${likes} Likes Collected equals ${score} Final Score. Best Score ${best}.`
     );
   },
   onStateChange(state) {
@@ -250,42 +283,68 @@ for (const navEl of document.querySelectorAll('[data-spatial-nav]')) {
   });
 }
 
-// Responsive viewport & Mobile Portrait Rotate-to-Landscape Splash Enforcement
+// Responsive viewport & Mobile Portrait / Fullscreen Gate Enforcement
 function handleViewportAndOrientation() {
   const w = window.innerWidth;
   const h = window.innerHeight;
   renderer.resize(w, h, window.devicePixelRatio || 1);
   game.setViewportAspect(w, h);
 
-  const mustRotate = isMobileDevice() && isPortraitOrientation();
-  const wasShowingSplash = !rotateSplash.hidden;
+  const mobile = isMobileDevice();
+  const mustRotate = mobile && isPortraitOrientation();
+  const mustEnterFullscreen =
+    mobile && !mustRotate && canRequestFullscreen() && !isFullscreenActive();
+
+  const wasShowingRotate = !rotateSplash.hidden;
+  const wasShowingFullscreen = !fullscreenSplash.hidden;
+  const wasGated = wasShowingRotate || wasShowingFullscreen;
 
   if (mustRotate) {
     if (game.state === 'playing' || game.state === 'ready') {
       game.pause();
     }
     rotateSplash.hidden = false;
+    fullscreenSplash.hidden = true;
     appShell.inert = true;
-    if (!wasShowingSplash) {
+    if (!wasShowingRotate) {
       btnRotateFullscreen.focus();
       announcePolite('Please rotate your device to landscape mode to play Flappysky.');
     }
+  } else if (mustEnterFullscreen) {
+    if (game.state === 'playing' || game.state === 'ready') {
+      game.pause();
+    }
+    rotateSplash.hidden = true;
+    fullscreenSplash.hidden = false;
+    appShell.inert = true;
+    if (!wasShowingFullscreen) {
+      btnEnterFullscreen.focus();
+      announcePolite('Tap Enter Fullscreen to play Flappysky.');
+    }
   } else {
     rotateSplash.hidden = true;
+    fullscreenSplash.hidden = true;
     appShell.inert = false;
-    if (wasShowingSplash) {
+    if (wasGated) {
       focusActiveMenuDefault(game.state);
     }
   }
 }
 
+function handleFullscreenStateChange() {
+  syncFullscreenButtons();
+  handleViewportAndOrientation();
+}
+
 window.addEventListener('resize', handleViewportAndOrientation);
 window.addEventListener('orientationchange', handleViewportAndOrientation);
-document.addEventListener('fullscreenchange', syncFullscreenButtons);
-document.addEventListener('webkitfullscreenchange', syncFullscreenButtons);
+document.addEventListener('fullscreenchange', handleFullscreenStateChange);
+document.addEventListener('webkitfullscreenchange', handleFullscreenStateChange);
+standaloneDisplayQuery.addEventListener('change', handleFullscreenStateChange);
 
 // Menu Button Handlers
 function beginFlightFromUI() {
+  if (isMobileGateOpen()) return;
   if (isMobileDevice()) {
     requestFullscreenAutoMobile();
   }
@@ -335,12 +394,19 @@ btnRotateFullscreen.addEventListener('click', () => {
   audio.unlock();
 });
 
+btnEnterFullscreen.addEventListener('click', () => {
+  toggleFullscreen();
+  audio.unlock();
+  audio.playMenuTick();
+});
+
 btnHudPause.addEventListener('click', () => {
   audio.playMenuTick();
   game.pause();
 });
 
 btnResume.addEventListener('click', () => {
+  if (isMobileGateOpen()) return;
   if (isMobileDevice()) {
     requestFullscreenAutoMobile();
   }
@@ -373,7 +439,7 @@ btnGameoverHome.addEventListener('click', () => {
 // - Spacebar moves butterfly up (tap or hold) & releasing glides down
 // - Escape / P pauses & resumes flight
 window.addEventListener('keydown', (e) => {
-  if (!rotateSplash.hidden) return;
+  if (isMobileGateOpen()) return;
 
   const activeNav = getActiveOverlayNav();
   if (activeNav && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
@@ -437,7 +503,7 @@ window.addEventListener('keyup', (e) => {
 
 // Mouse Click & Touch Controls on Canvas
 canvas.addEventListener('pointerdown', (e) => {
-  if (!rotateSplash.hidden) return;
+  if (isMobileGateOpen()) return;
   if (game.state !== 'ready' && game.state !== 'playing') return;
 
   e.preventDefault();

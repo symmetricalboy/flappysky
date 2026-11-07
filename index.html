@@ -51,9 +51,6 @@
       </div>
     </header>
 
-    <!-- Brief status toast (e.g. if an embedded browser container blocks fullscreen) -->
-    <div id="fs-toast" class="fs-toast" role="status" hidden></div>
-
     <!-- Get Ready Prompt -->
     <div id="ready-banner" class="ready-banner" hidden aria-hidden="true">
       <div class="ready-card">
@@ -84,7 +81,7 @@
         </div>
 
         <p class="brand-tagline">
-          Fly your butterfly between the blue pillars (+1) and collect floating <span class="like-accent">♥ Likes</span> (+1) along the way. Tap or hold to flutter upward, and release to glide down.
+          Fly your butterfly between the blue posts (+1) and collect floating <span class="like-accent">♥ Likes</span> (+1) along the way. Tap or hold to flutter upward, and release to glide down.
         </p>
 
         <div class="menu-highscore">
@@ -181,8 +178,8 @@
 
         <div class="score-summary">
           <p class="score-equation">
-            <strong id="go-pillars" class="eq-num eq-pillars">0</strong>
-            <span class="eq-text">Pillars Cleared</span>
+            <strong id="go-posts" class="eq-num eq-posts">0</strong>
+            <span class="eq-text">Posts Cleared</span>
             <span class="eq-op">+</span>
             <strong id="go-likes" class="eq-num eq-likes">0</strong>
             <span class="eq-text">Likes Collected</span>
@@ -223,10 +220,37 @@
         Flappysky is played in full-screen <strong>landscape mode</strong>. Please turn your device sideways to spread your wings!
       </p>
       <button type="button" id="btn-rotate-fullscreen" class="btn btn-light">
-        Enter Full Screen &amp; Landscape
+        Enter Fullscreen &amp; Landscape
       </button>
     </div>
   </aside>
+
+  <!-- Mobile Fullscreen Gate Splash (outside #app-shell so #app-shell can become inert) -->
+  <aside id="fullscreen-splash" class="rotate-splash fullscreen-splash" role="dialog" aria-labelledby="fullscreen-title" hidden>
+    <div class="rotate-card fullscreen-card">
+      <div class="fullscreen-illustration" aria-hidden="true">
+        <svg class="fullscreen-prompt-svg" viewBox="0 0 120 88">
+          <rect x="10" y="10" width="100" height="68" rx="12" fill="rgba(255, 255, 255, 0.14)" stroke="#FFFFFF" stroke-width="4"/>
+          <polyline points="24 32 24 20 36 20" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="96 32 96 20 84 20" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="24 56 24 68 36 68" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="96 56 96 68 84 68" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path fill="#7DD3FC" d="M60 42 C53 30, 39 22, 36 30 C33 38, 41 48, 50 50 C43 52, 40 60, 46 63 C52 66, 57 58, 60 52 C63 58, 68 66, 74 63 C80 60, 77 52, 70 50 C79 48, 87 38, 84 30 C81 22, 67 30, 60 42 Z"/>
+        </svg>
+      </div>
+      <h2 id="fullscreen-title" class="rotate-heading">Play in Fullscreen</h2>
+      <p class="rotate-copy">
+        Flappysky is played in full screen on mobile. Tap below to expand the sky before playing!
+      </p>
+      <button type="button" id="btn-enter-fullscreen" class="btn btn-light btn-enter-fullscreen">
+        <span class="enter-fs-icon" aria-hidden="true"></span>
+        <span>Enter Fullscreen</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Brief status toast (outside #app-shell so status announcements aren't suppressed by inert) -->
+  <div id="fs-toast" class="fs-toast" role="status" hidden></div>
 
   <!-- Centralized Polite Live Announcer -->
   <div id="live-announcer" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>

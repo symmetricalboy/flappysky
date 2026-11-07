@@ -1,24 +1,24 @@
 /**
  * 2D Canvas Renderer for Flappysky
- * Draws Bluesky atmosphere, fluffy layered clouds, rounded blue pillars,
+ * Draws Bluesky atmosphere, fluffy layered clouds, rounded-rectangle blue posts,
  * collectible red Likes, +1 popups, and an animated blue butterfly.
  */
 
 import { CLOUD_TILE_WIDTH, VIRTUAL_HEIGHT } from './game.js';
 
-const BLUESKY_PILLAR_PALETTES = [
+const BLUESKY_POST_PALETTES = [
   // 0: Classic Bluesky Azure
-  { light: '#54B6FF', mid: '#0085FF', dark: '#0056C7', band: '#0043A4', rim: '#B8E2FF' },
+  { light: '#4CB3FF', mid: '#0085FF', dark: '#005ED1', band: '#0043A4', rim: '#C4E7FF' },
   // 1: Cerulean Breeze
-  { light: '#6AD4FF', mid: '#0EA5E9', dark: '#0369A1', band: '#075985', rim: '#CFF0FF' },
+  { light: '#58CBFF', mid: '#0EA5E9', dark: '#0275B3', band: '#075985', rim: '#D4F2FF' },
   // 2: Cobalt Sky
-  { light: '#6BA9FF', mid: '#2563EB', dark: '#1E40AF', band: '#172E82', rim: '#C7DFFF' },
+  { light: '#5FA2FF', mid: '#2563EB', dark: '#1E46BD', band: '#172E82', rim: '#C7DFFF' },
   // 3: Periwinkle Drift
-  { light: '#83C5FF', mid: '#3B82F6', dark: '#1D4ED8', band: '#1A3BA8', rim: '#DCEBFF' },
+  { light: '#76BCFF', mid: '#3B82F6', dark: '#2154DE', band: '#1A3BA8', rim: '#DCEBFF' },
   // 4: Glacier Blue
-  { light: '#47C6FF', mid: '#0284C7', dark: '#065A8C', band: '#09446B', rim: '#D4F2FF' },
+  { light: '#3EC0FF', mid: '#0284C7', dark: '#066299', band: '#09446B', rim: '#D4F2FF' },
   // 5: Deep Sapphire
-  { light: '#5CA0FF', mid: '#1463DC', dark: '#0A3B91', band: '#062869', rim: '#ABD0FF' }
+  { light: '#4F98FF', mid: '#1463DC', dark: '#0B43A3', band: '#062869', rim: '#ABD0FF' }
 ];
 
 // Asymmetric multi-puff cloud formations per 440px tile (matches background cloud style)
@@ -65,12 +65,12 @@ export class FlappyskyRenderer {
     this.drawSkyBackdrop(ctx, vw, vh, game.time);
     this.drawClouds(ctx, game.clouds);
 
-    // Back layer of bottom cloud sea (soft parallax behind pillars)
+    // Back layer of bottom cloud sea (soft parallax behind posts)
     this.drawBackCloudBed(ctx, vw, vh, game.floorMidScroll);
 
-    // Obstacles: Rounded Bluesky pillars
-    for (const pillar of game.pillars) {
-      this.drawRoundedPillarPair(ctx, pillar, vh);
+    // Obstacles: Rounded-rectangle Bluesky posts
+    for (const post of game.posts) {
+      this.drawPostPair(ctx, post, vh);
     }
 
     // Collectibles: Likes (Red Hearts)
@@ -89,7 +89,7 @@ export class FlappyskyRenderer {
     // Player: Bluesky Butterfly
     this.drawBlueskyButterfly(ctx, game.butterfly, game.time);
 
-    // Floating +1 Score Popups (Blue for Pillars, Red for Likes)
+    // Floating +1 Score Popups (Blue for Posts, Red for Likes)
     this.drawPopups(ctx, game.popups);
 
     // Soft impact flash
@@ -165,7 +165,7 @@ export class FlappyskyRenderer {
     const floorTop = vh - 38;
 
     ctx.save();
-    // Solid soft cloud-white lower fill so pillars tuck cleanly into the cloud bed
+    // Solid soft cloud-white lower fill so posts tuck cleanly into the cloud bed
     const baseGrad = ctx.createLinearGradient(0, floorTop, 0, vh);
     baseGrad.addColorStop(0, '#FFFFFF');
     baseGrad.addColorStop(1, '#E6F4FF');
@@ -186,95 +186,66 @@ export class FlappyskyRenderer {
     ctx.restore();
   }
 
-  drawRoundedPillarPair(ctx, pillar, vh) {
-    const pal = BLUESKY_PILLAR_PALETTES[pillar.palette] || BLUESKY_PILLAR_PALETTES[0];
-    const r = pillar.radius;
-    const left = pillar.x - r;
+  drawPostPair(ctx, post, vh) {
+    const pal = BLUESKY_POST_PALETTES[post.palette] || BLUESKY_POST_PALETTES[0];
+    const left = post.x - post.halfWidth;
+    const cr = post.cornerRadius;
 
-    this.drawSingleRoundedPillar(ctx, left, -24, pillar.width, pillar.topEnd + 24, r, 'bottom', pal);
-    this.drawSingleRoundedPillar(
+    this.drawSinglePost(ctx, left, -24, post.width, post.topEnd + 24, cr, pal);
+    this.drawSinglePost(
       ctx,
       left,
-      pillar.bottomStart,
-      pillar.width,
-      vh - pillar.bottomStart + 24,
-      r,
-      'top',
+      post.bottomStart,
+      post.width,
+      vh - post.bottomStart + 24,
+      cr,
       pal
     );
   }
 
-  drawSingleRoundedPillar(ctx, x, y, width, height, radius, roundedEnd, pal) {
+  drawSinglePost(ctx, x, y, width, height, cornerRadius, pal) {
     if (height <= 0) return;
-    const cx = x + radius;
 
     ctx.save();
 
-    // Soft ambient shadow
-    ctx.shadowColor = 'rgba(7, 38, 84, 0.18)';
-    ctx.shadowBlur = 12;
-    ctx.shadowOffsetX = 4;
+    // Soft rectangular drop shadow
+    ctx.shadowColor = 'rgba(7, 38, 84, 0.16)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetX = 3;
     ctx.shadowOffsetY = 3;
 
     ctx.beginPath();
-    if (roundedEnd === 'bottom') {
-      const capCy = y + height - radius;
-      ctx.moveTo(x, y);
-      ctx.lineTo(x + width, y);
-      ctx.lineTo(x + width, capCy);
-      ctx.arc(cx, capCy, radius, 0, Math.PI, false);
-      ctx.closePath();
-    } else {
-      const capCy = y + radius;
-      ctx.moveTo(x, y + height);
-      ctx.lineTo(x, capCy);
-      ctx.arc(cx, capCy, radius, Math.PI, 0, false);
-      ctx.lineTo(x + width, y + height);
-      ctx.closePath();
-    }
+    ctx.roundRect(x, y, width, height, cornerRadius);
 
-    // Cylindrical horizontal 3D blue shading
-    const cylGrad = ctx.createLinearGradient(x, 0, x + width, 0);
-    cylGrad.addColorStop(0, pal.mid);
-    cylGrad.addColorStop(0.24, pal.light);
-    cylGrad.addColorStop(0.58, pal.mid);
-    cylGrad.addColorStop(0.9, pal.dark);
-    cylGrad.addColorStop(1, pal.band);
+    // Clean flat/diagonal Bluesky card-block gradient (no cylindrical dome or collar ring)
+    const blockGrad = ctx.createLinearGradient(x, 0, x + width, 0);
+    blockGrad.addColorStop(0, pal.light);
+    blockGrad.addColorStop(0.52, pal.mid);
+    blockGrad.addColorStop(1, pal.dark);
 
-    ctx.fillStyle = cylGrad;
+    ctx.fillStyle = blockGrad;
     ctx.fill();
 
-    // Outer rounded pillar contour before clipping interior details
+    // Crisp outer rounded-rectangle border
     ctx.shadowColor = 'transparent';
     ctx.strokeStyle = pal.band;
     ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    ctx.clip();
-
-    // Decorative Bluesky architectural ring band near the dome cap
-    ctx.fillStyle = pal.band;
-    ctx.globalAlpha = 0.24;
-    if (roundedEnd === 'bottom') {
-      const bandY = y + height - radius - 14;
-      ctx.fillRect(x, bandY, width, 8);
-    } else {
-      const bandY = y + radius + 6;
-      ctx.fillRect(x, bandY, width, 8);
-    }
-
-    // Soft vertical specular highlight gleam along left-front of rounded pillar
-    ctx.globalAlpha = 0.42;
-    ctx.fillStyle = pal.rim;
-    const gleamX = x + width * 0.2;
-    if (roundedEnd === 'bottom') {
+    // Subtle crisp inner highlight bevel following the rounded rectangle contour
+    if (width > 8 && height > 8) {
       ctx.beginPath();
-      ctx.roundRect(gleamX, y, 10, Math.max(8, height - radius * 0.42), 5);
-      ctx.fill();
-    } else {
-      ctx.beginPath();
-      ctx.roundRect(gleamX, y + radius * 0.42, 10, Math.max(8, height - radius * 0.42), 5);
-      ctx.fill();
+      ctx.roundRect(
+        x + 2.5,
+        y + 2.5,
+        width - 5,
+        height - 5,
+        Math.max(4, cornerRadius - 2.5)
+      );
+      ctx.strokeStyle = pal.rim;
+      ctx.globalAlpha = 0.42;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
     }
 
     ctx.restore();
