@@ -1,0 +1,13 @@
+{
+  "name": "flappysky",
+  "version": "1.0.0",
+  "description": "Flappysky — A Bluesky-inspired Flappy Bird web game for desktop and mobile",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs"
+  }
+}

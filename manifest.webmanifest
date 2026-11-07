@@ -1,0 +1,18 @@
+{
+  "name": "Flappysky",
+  "short_name": "Flappysky",
+  "description": "Flutter through rounded blue pillars, dodge white spikes, and collect red hearts in Flappysky!",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0085FF",
+  "theme_color": "#0085FF",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

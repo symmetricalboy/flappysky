@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0085FF">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Flappysky">
+  <title>Flappysky | Flutter Through the Blue Sky</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main id="app-shell" class="app-shell">
+    <canvas
+      id="game-canvas"
+      class="game-canvas"
+      aria-label="Flappysky sky obstacle course"
+    ></canvas>
+
+    <!-- Active Flight HUD -->
+    <header id="hud" class="hud" hidden>
+      <div class="hud-stats" aria-label="Current run statistics">
+        <div class="stat-pill stat-score">
+          <span class="stat-label">Score</span>
+          <span id="hud-score" class="stat-value">0</span>
+        </div>
+        <div class="stat-pill stat-best">
+          <span class="stat-label">Best</span>
+          <span id="hud-best" class="stat-value">0</span>
+        </div>
+      </div>
+
+      <div class="hud-actions">
+        <button
+          type="button"
+          id="btn-hud-fullscreen"
+          class="icon icon-btn btn-fullscreen-toggle"
+          aria-label="Full screen"
+          aria-pressed="false"
+        ></button>
+        <button
+          type="button"
+          id="btn-hud-pause"
+          class="icon icon-btn btn-pause-icon"
+          aria-label="Pause game"
+        ></button>
+      </div>
+    </header>
+
+    <!-- Brief status toast (e.g. if an embedded browser container blocks fullscreen) -->
+    <div id="fs-toast" class="fs-toast" role="status" hidden></div>
+
+    <!-- Get Ready Prompt -->
+    <div id="ready-banner" class="ready-banner" hidden aria-hidden="true">
+      <div class="ready-card">
+        <p class="ready-title">Ready to Flutter!</p>
+        <p class="ready-sub">
+          <span class="desktop-hint">Press or hold <kbd>Space</kbd> or click with your mouse to fly up &amp; release to glide down</span>
+          <span class="mobile-hint">Tap or hold anywhere on the screen to flutter up &amp; down</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Main Menu Overlay -->
+    <section id="main-menu" class="overlay-screen" role="dialog" aria-labelledby="main-menu-title">
+      <div class="menu-card">
+        <div class="brand-header">
+          <svg class="brand-butterfly" aria-hidden="true" viewBox="0 0 120 100">
+            <defs>
+              <linearGradient id="menuWingGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#5CC8FF"/>
+                <stop offset="55%" stop-color="#0085FF"/>
+                <stop offset="100%" stop-color="#0057D9"/>
+              </linearGradient>
+            </defs>
+            <path fill="url(#menuWingGrad)" d="M60 48 C46 22, 14 4, 8 23 C2 42, 18 63, 38 67 C22 72, 15 90, 29 97 C42 103, 55 86, 60 71 C65 86, 78 103, 91 97 C105 90, 98 72, 82 67 C102 63, 118 42, 112 23 C106 4, 74 22, 60 48 Z"/>
+            <rect x="57.5" y="36" width="5" height="40" rx="2.5" fill="#072B61"/>
+          </svg>
+          <h1 id="main-menu-title" class="brand-title">Flappysky</h1>
+        </div>
+
+        <p class="brand-tagline">
+          Fly your butterfly between the blue pillars (+1) and collect floating <span class="like-accent">♥ Likes</span> (+1) along the way. Tap or hold to flutter upward, and release to glide down.
+        </p>
+
+        <div class="menu-highscore">
+          <span class="menu-highscore-label">High Score</span>
+          <strong id="menu-best-score" class="menu-highscore-value">0</strong>
+        </div>
+
+        <div class="menu-controls" data-spatial-nav role="group" aria-label="Main menu">
+          <button type="button" id="btn-play" class="btn btn-primary btn-lg">
+            <span>Start</span>
+          </button>
+
+          <div class="icon-toggle-row" role="group" aria-label="Audio and display settings">
+            <button
+              type="button"
+              id="btn-menu-sfx"
+              class="icon menu-icon-btn btn-sfx-toggle"
+              aria-label="Sound effects"
+              aria-pressed="true"
+            ></button>
+            <button
+              type="button"
+              id="btn-menu-music"
+              class="icon menu-icon-btn btn-music-toggle"
+              aria-label="Background music"
+              aria-pressed="true"
+            ></button>
+            <button
+              type="button"
+              id="btn-menu-fullscreen"
+              class="icon menu-icon-btn btn-fullscreen-toggle"
+              aria-label="Full screen"
+              aria-pressed="false"
+            ></button>
+          </div>
+        </div>
+
+        <footer class="menu-footer">
+          <p class="controls-hint">
+            <span><kbd>Space</kbd>, Mouse Click, or Touch to Fly</span>
+          </p>
+        </footer>
+      </div>
+    </section>
+
+    <!-- Pause Menu Overlay -->
+    <section id="pause-menu" class="overlay-screen" role="dialog" aria-labelledby="pause-title" hidden>
+      <div class="menu-card menu-card-compact">
+        <h2 id="pause-title" class="overlay-heading">Flight Paused</h2>
+        <p class="overlay-subtitle">Catch your breath in the clouds.</p>
+
+        <div class="menu-controls" data-spatial-nav role="group" aria-label="Pause options">
+          <button type="button" id="btn-resume" class="btn btn-primary btn-lg">Resume Flight</button>
+
+          <div class="icon-toggle-row" role="group" aria-label="Audio and display settings">
+            <button
+              type="button"
+              id="btn-pause-sfx"
+              class="icon menu-icon-btn btn-sfx-toggle"
+              aria-label="Sound effects"
+              aria-pressed="true"
+            ></button>
+            <button
+              type="button"
+              id="btn-pause-music"
+              class="icon menu-icon-btn btn-music-toggle"
+              aria-label="Background music"
+              aria-pressed="true"
+            ></button>
+            <button
+              type="button"
+              id="btn-pause-fullscreen"
+              class="icon menu-icon-btn btn-fullscreen-toggle"
+              aria-label="Full screen"
+              aria-pressed="false"
+            ></button>
+          </div>
+
+          <div class="pause-secondary-row">
+            <button type="button" id="btn-pause-restart" class="btn btn-secondary">Restart</button>
+            <button type="button" id="btn-pause-home" class="btn btn-ghost">Main Menu</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Game Over Overlay -->
+    <section id="gameover-menu" class="overlay-screen" role="dialog" aria-labelledby="gameover-title" hidden>
+      <div class="menu-card menu-card-compact">
+        <div class="gameover-header">
+          <h2 id="gameover-title" class="overlay-heading">Flight Complete</h2>
+          <span id="new-best-badge" class="new-best-badge" hidden>New Record!</span>
+        </div>
+
+        <div class="score-summary">
+          <p class="score-equation">
+            <strong id="go-pillars" class="eq-num eq-pillars">0</strong>
+            <span class="eq-text">Pillars Cleared</span>
+            <span class="eq-op">+</span>
+            <strong id="go-likes" class="eq-num eq-likes">0</strong>
+            <span class="eq-text">Likes Collected</span>
+            <span class="eq-op">=</span>
+          </p>
+
+          <p class="final-score-line">
+            <strong id="go-score" class="final-score-num">0</strong>
+            <span class="final-score-text">Final Score</span>
+          </p>
+
+          <p class="best-score-line">
+            <span class="best-score-text">Best Score:</span>
+            <strong id="go-best" class="best-score-num">0</strong>
+          </p>
+        </div>
+
+        <div class="menu-controls" data-spatial-nav role="group" aria-label="Post-game options">
+          <button type="button" id="btn-retry" class="btn btn-primary btn-lg">Fly Again</button>
+          <button type="button" id="btn-gameover-home" class="btn btn-secondary">Main Menu</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Mobile Portrait Orientation Lock Splash (outside #app-shell so #app-shell can become inert) -->
+  <aside id="rotate-splash" class="rotate-splash" role="dialog" aria-labelledby="rotate-title" hidden>
+    <div class="rotate-card">
+      <div class="rotate-illustration" aria-hidden="true">
+        <svg class="phone-rotate-svg" viewBox="0 0 120 120">
+          <rect x="36" y="18" width="48" height="84" rx="10" fill="none" stroke="#FFFFFF" stroke-width="5"/>
+          <circle cx="60" cy="91" r="3.5" fill="#FFFFFF"/>
+          <path fill="#7DD3FC" d="M60 54 C53 42, 39 34, 36 42 C33 50, 41 60, 50 62 C43 64, 40 72, 46 75 C52 78, 57 70, 60 64 C63 70, 68 78, 74 75 C80 72, 77 64, 70 62 C79 60, 87 50, 84 42 C81 34, 67 42, 60 54 Z"/>
+        </svg>
+      </div>
+      <h2 id="rotate-title" class="rotate-heading">Rotate Your Device</h2>
+      <p class="rotate-copy">
+        Flappysky is played in full-screen <strong>landscape mode</strong>. Please turn your device sideways to spread your wings!
+      </p>
+      <button type="button" id="btn-rotate-fullscreen" class="btn btn-light">
+        Enter Full Screen &amp; Landscape
+      </button>
+    </div>
+  </aside>
+
+  <!-- Centralized Polite Live Announcer -->
+  <div id="live-announcer" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
