@@ -35,9 +35,10 @@ function circleIntersectsRoundedRect(cx, cy, crCircle, rx, ry, rw, rh, rCorner) 
 }
 
 export class FlappyskyGame {
-  constructor({ audio, onScoreChange, onGameOver, onStateChange }) {
+  constructor({ audio, onScoreChange, onLikeCollected, onGameOver, onStateChange }) {
     this.audio = audio;
     this.onScoreChange = onScoreChange;
+    this.onLikeCollected = onLikeCollected;
     this.onGameOver = onGameOver;
     this.onStateChange = onStateChange;
 
@@ -96,6 +97,21 @@ export class FlappyskyGame {
       localStorage.setItem(BEST_SCORE_KEY, String(score));
     } catch {
       // Ignore storage errors
+    }
+  }
+
+  syncBestScore(externalBest) {
+    const parsed = Math.trunc(Number(externalBest) || 0);
+    if (parsed > this.bestScore) {
+      this.bestScore = parsed;
+      this.saveBestScore(this.bestScore);
+      if (this.onScoreChange) {
+        this.onScoreChange({
+          score: this.score,
+          likes: this.likesCollected,
+          best: this.bestScore
+        });
+      }
     }
   }
 
@@ -401,7 +417,7 @@ export class FlappyskyGame {
 
     if (this.butterfly.y + this.butterfly.radius >= FLOOR_Y) {
       this.butterfly.y = FLOOR_Y - this.butterfly.radius;
-      this.triggerGameOver(reducedMotion);
+      this.triggerGameOver(reducedMotion, 'ground');
       return;
     }
 
@@ -449,7 +465,7 @@ export class FlappyskyGame {
 
     // Check Rounded-Rectangle Post Collisions
     if (this.checkPostCollisions()) {
-      this.triggerGameOver(reducedMotion);
+      this.triggerGameOver(reducedMotion, 'post');
     }
   }
 
@@ -499,6 +515,13 @@ export class FlappyskyGame {
         this.likesCollected += 1;
         this.addPoints(LIKE_POINTS);
         this.audio.playLike();
+        if (this.onLikeCollected) {
+          this.onLikeCollected({
+            likesRun: this.likesCollected,
+            score: this.score,
+            best: this.bestScore
+          });
+        }
 
         // Red +1 pop-up when collecting a Like
         this.popups.push({
@@ -577,7 +600,7 @@ export class FlappyskyGame {
     return false;
   }
 
-  triggerGameOver(reducedMotion = false) {
+  triggerGameOver(reducedMotion = false, cause = 'post') {
     this.isHoldingInput = false;
     this.gameOverTimestamp = performance.now();
     this.flashAlpha = reducedMotion ? 0.15 : 0.45;
@@ -607,7 +630,8 @@ export class FlappyskyGame {
         best: this.bestScore,
         posts: this.postsCleared,
         likes: this.likesCollected,
-        isNewBest: this.isNewBest
+        isNewBest: this.isNewBest,
+        cause
       });
     }
   }

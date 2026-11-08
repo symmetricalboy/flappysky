@@ -65,6 +65,19 @@
     <!-- Main Menu Overlay -->
     <section id="main-menu" class="overlay-screen" role="dialog" aria-labelledby="main-menu-title">
       <div class="menu-card">
+        <div class="menu-top-bar">
+          <button
+            type="button"
+            id="btn-menu-account"
+            class="account-pill"
+            command="show-modal"
+            commandfor="auth-dialog"
+          >
+            <span class="account-dot" id="menu-account-dot" aria-hidden="true"></span>
+            <span id="menu-account-label">Connect ATProto</span>
+          </button>
+        </div>
+
         <div class="brand-header">
           <svg class="brand-butterfly" aria-hidden="true" viewBox="0 0 120 100">
             <defs>
@@ -94,6 +107,41 @@
             <span>Start</span>
           </button>
 
+          <div class="og-menu-row" role="group" aria-label="Achievements and Leaderboards">
+            <button
+              type="button"
+              id="btn-menu-achievements"
+              class="btn btn-secondary btn-og"
+              command="show-modal"
+              commandfor="achievements-dialog"
+            >
+              <svg class="btn-og-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="8" r="6"/>
+                <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
+              </svg>
+              <span>Achievements</span>
+              <span id="menu-ach-count" class="btn-badge">0/14</span>
+            </button>
+
+            <button
+              type="button"
+              id="btn-menu-leaderboards"
+              class="btn btn-secondary btn-og"
+              command="show-modal"
+              commandfor="leaderboard-dialog"
+            >
+              <svg class="btn-og-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                <path d="M4 22h16"/>
+                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+              </svg>
+              <span>Leaderboards</span>
+            </button>
+          </div>
+
           <div class="icon-toggle-row" role="group" aria-label="Audio and display settings">
             <button
               type="button"
@@ -122,6 +170,14 @@
         <footer class="menu-footer">
           <p class="controls-hint">
             <span><kbd>Space</kbd>, Mouse Click, or Touch to Fly</span>
+            <span aria-hidden="true">·</span>
+            <a
+              id="menu-opengaming-link"
+              class="og-footer-link"
+              href="https://opengaming.games"
+              target="_blank"
+              rel="noopener noreferrer"
+            >Open Gaming ATProto</a>
           </p>
         </footer>
       </div>
@@ -194,16 +250,330 @@
           <p class="best-score-line">
             <span class="best-score-text">Best Score:</span>
             <strong id="go-best" class="best-score-num">0</strong>
+            <span id="go-sync-pill" class="go-sync-pill" hidden>Synced to PDS</span>
           </p>
+        </div>
+
+        <div id="go-unlocks-strip" class="go-unlocks-strip" hidden>
+          <p class="go-unlocks-heading">Unlocked This Flight</p>
+          <ul id="go-unlocks-list" class="go-unlocks-list" role="list"></ul>
         </div>
 
         <div class="menu-controls" data-spatial-nav role="group" aria-label="Post-game options">
           <button type="button" id="btn-retry" class="btn btn-primary btn-lg">Fly Again</button>
-          <button type="button" id="btn-gameover-home" class="btn btn-secondary">Main Menu</button>
+          <div class="og-menu-row">
+            <button
+              type="button"
+              id="btn-go-achievements"
+              class="btn btn-secondary btn-og"
+              command="show-modal"
+              commandfor="achievements-dialog"
+            >Achievements</button>
+            <button
+              type="button"
+              id="btn-go-leaderboards"
+              class="btn btn-secondary btn-og"
+              command="show-modal"
+              commandfor="leaderboard-dialog"
+            >Leaderboards</button>
+          </div>
+          <button type="button" id="btn-gameover-home" class="btn btn-ghost">Main Menu</button>
         </div>
       </div>
     </section>
   </main>
+
+  <!-- Native Modal Dialog: Achievements -->
+  <dialog id="achievements-dialog" class="og-dialog" closedby="any" aria-labelledby="achievements-dialog-title">
+    <div class="og-dialog-shell">
+      <header class="og-dialog-header">
+        <div class="og-dialog-title-group">
+          <h2 id="achievements-dialog-title" class="og-dialog-title">Achievements</h2>
+          <p id="ach-completion-summary" class="og-dialog-subtitle">0 of 14 unlocked (0%)</p>
+        </div>
+        <button
+          type="button"
+          class="dialog-close-btn"
+          command="close"
+          commandfor="achievements-dialog"
+          aria-label="Close achievements"
+          autofocus
+        >✕</button>
+      </header>
+
+      <div class="og-sync-banner">
+        <div class="og-sync-copy">
+          <strong id="ach-sync-title">Playing in Guest Mode</strong>
+          <span id="ach-sync-desc">Connect your ATProto account to sign &amp; save achievements to your PDS.</span>
+        </div>
+        <div class="og-sync-actions">
+          <button
+            type="button"
+            id="btn-ach-open-auth"
+            class="btn btn-primary btn-sm"
+            command="show-modal"
+            commandfor="auth-dialog"
+          >Connect ATProto</button>
+          <a
+            id="ach-view-profile-link"
+            class="btn btn-secondary btn-sm"
+            href="https://opengaming.games"
+            target="_blank"
+            rel="noopener noreferrer"
+            hidden
+          >View on Open Gaming</a>
+        </div>
+      </div>
+
+      <div class="og-toolbar">
+        <fieldset class="og-filter-fieldset">
+          <legend class="visually-hidden">Filter achievements</legend>
+          <label class="og-radio-pill">
+            <input type="radio" name="ach-filter" value="all" checked>
+            <span>All (14)</span>
+          </label>
+          <label class="og-radio-pill">
+            <input type="radio" name="ach-filter" value="unlocked">
+            <span>Unlocked</span>
+          </label>
+          <label class="og-radio-pill">
+            <input type="radio" name="ach-filter" value="locked">
+            <span>Locked</span>
+          </label>
+        </fieldset>
+
+        <div class="og-lifetime-stats" aria-label="Lifetime Flappysky stats">
+          <span>Flights: <strong id="stat-flights">0</strong></span>
+          <span>Likes: <strong id="stat-likes">0</strong></span>
+          <span>Best: <strong id="stat-best">0</strong></span>
+        </div>
+      </div>
+
+      <ul id="achievements-list" class="achievements-grid" role="list"></ul>
+    </div>
+  </dialog>
+
+  <!-- Native Modal Dialog: All-Time Best Score Leaderboard -->
+  <dialog id="leaderboard-dialog" class="og-dialog" closedby="any" aria-labelledby="leaderboard-dialog-title">
+    <div class="og-dialog-shell">
+      <header class="og-dialog-header">
+        <div class="og-dialog-brand">
+          <img
+            src="./assets/achievements/high-score.svg"
+            alt=""
+            width="44"
+            height="44"
+            class="og-lb-badge"
+          >
+          <div class="og-dialog-title-group">
+            <h2 id="leaderboard-dialog-title" class="og-dialog-title">All-Time Best Score</h2>
+            <p class="og-dialog-subtitle">Verified ATProto personal bests · Posts (+1) + Likes (+1)</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="dialog-close-btn"
+          command="close"
+          commandfor="leaderboard-dialog"
+          aria-label="Close leaderboard"
+          autofocus
+        >✕</button>
+      </header>
+
+      <div class="og-toolbar">
+        <fieldset class="og-filter-fieldset">
+          <legend class="visually-hidden">Leaderboard scope</legend>
+          <label class="og-radio-pill">
+            <input type="radio" name="lb-scope" value="public" checked>
+            <span>Global All-Time</span>
+          </label>
+          <label class="og-radio-pill">
+            <input type="radio" name="lb-scope" value="social">
+            <span>Following</span>
+          </label>
+        </fieldset>
+
+        <div class="og-toolbar-actions">
+          <button type="button" id="btn-lb-refresh" class="btn btn-secondary btn-sm">Refresh</button>
+          <a
+            id="lb-explorer-link"
+            class="btn btn-ghost btn-sm"
+            href="https://opengaming.games"
+            target="_blank"
+            rel="noopener noreferrer"
+          >opengaming.games ↗</a>
+        </div>
+      </div>
+
+      <p id="lb-status-msg" class="og-status-note" hidden></p>
+
+      <div tabindex="0" role="region" aria-labelledby="leaderboard-table-caption" class="table-wrapper">
+        <table class="og-leaderboard-table">
+          <caption id="leaderboard-table-caption" class="visually-hidden">
+            All-Time Best Score leaderboard rankings
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Rank</th>
+              <th scope="col">Pilot</th>
+              <th scope="col">Best Score</th>
+              <th scope="col">Verification</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Native Modal Dialog: ATProto Account Connection -->
+  <dialog id="auth-dialog" class="og-dialog og-dialog-narrow" closedby="any" aria-labelledby="auth-dialog-title">
+    <div class="og-dialog-shell">
+      <header class="og-dialog-header">
+        <div class="og-dialog-title-group">
+          <h2 id="auth-dialog-title" class="og-dialog-title">ATProto Account</h2>
+          <p class="og-dialog-subtitle">Save cryptographically signed achievements &amp; high scores to your PDS.</p>
+        </div>
+        <button
+          type="button"
+          class="dialog-close-btn"
+          command="close"
+          commandfor="auth-dialog"
+          aria-label="Close account settings"
+        >✕</button>
+      </header>
+
+      <div id="auth-error-banner" class="auth-alert" role="alert" hidden></div>
+
+      <!-- Signed-in View -->
+      <div id="auth-connected-panel" class="auth-connected-panel" hidden>
+        <div class="auth-profile-row">
+          <img
+            id="auth-user-avatar"
+            class="auth-avatar"
+            src="./favicon.svg"
+            alt=""
+            width="48"
+            height="48"
+          >
+          <div class="auth-profile-meta">
+            <strong id="auth-user-name" class="auth-user-name">Pilot</strong>
+            <span id="auth-user-handle" class="auth-user-handle">@handle.bsky.social</span>
+            <code id="auth-user-did" class="auth-user-did">did:plc:...</code>
+          </div>
+        </div>
+
+        <p class="auth-connected-note">
+          Flappysky signs your unlocked achievements and personal-best high score with its publisher key and writes them directly to your ATProto repository.
+        </p>
+
+        <div class="auth-connected-actions">
+          <button type="button" id="btn-auth-sync-now" class="btn btn-primary">Sync Progress to PDS</button>
+          <a
+            id="auth-opengaming-profile"
+            class="btn btn-secondary"
+            href="https://opengaming.games"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Open Gaming Profile ↗</a>
+          <button type="button" id="btn-auth-logout" class="btn btn-ghost">Sign Out</button>
+        </div>
+      </div>
+
+      <!-- Signed-out View -->
+      <div id="auth-forms-panel" class="auth-forms-panel">
+        <form id="oauth-login-form" class="og-form" action="/api/auth/oauth/login" method="POST">
+          <div class="form-field">
+            <label for="oauth-handle-input" class="form-label">Bluesky or ATProto Handle</label>
+            <span id="oauth-handle-hint" class="form-hint">
+              Redirects to your PDS with granular Open Gaming record permissions only.
+            </span>
+            <input
+              id="oauth-handle-input"
+              name="handle"
+              class="form-input"
+              type="text"
+              autocomplete="username"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
+              enterkeyhint="go"
+              placeholder="symmetricalboy.com"
+              aria-describedby="oauth-handle-hint"
+              required
+              autofocus
+            >
+          </div>
+          <button type="submit" id="btn-oauth-submit" class="btn btn-primary btn-block">
+            Continue with ATProto OAuth
+          </button>
+        </form>
+
+        <details class="app-pw-disclosure">
+          <summary>Or sign in directly with an App Password</summary>
+          <form id="app-pw-form" class="og-form app-pw-form" action="/api/auth/app-password" method="POST">
+            <div class="form-field">
+              <label for="app-pw-identifier" class="form-label">Handle or DID</label>
+              <input
+                id="app-pw-identifier"
+                name="identifier"
+                class="form-input"
+                type="text"
+                autocomplete="username"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+                enterkeyhint="next"
+                placeholder="you.bsky.social"
+                required
+              >
+            </div>
+
+            <div class="form-field">
+              <div class="form-label-row">
+                <label for="app-pw-secret" class="form-label">App Password</label>
+                <button
+                  type="button"
+                  id="btn-toggle-app-pw"
+                  class="pw-toggle-btn"
+                  aria-pressed="false"
+                  aria-label="Show password"
+                  aria-describedby="app-pw-toggle-warning"
+                >Show</button>
+                <span id="app-pw-toggle-warning" class="visually-hidden">
+                  Warning: this displays your App Password on the screen.
+                </span>
+              </div>
+              <span id="app-pw-hint" class="form-hint">
+                Create an App Password in Bluesky Settings → Privacy and security → App Passwords.
+              </span>
+              <input
+                id="app-pw-secret"
+                name="password"
+                class="form-input"
+                type="password"
+                autocomplete="current-password"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+                enterkeyhint="done"
+                placeholder="xxxx-xxxx-xxxx-xxxx"
+                aria-describedby="app-pw-hint"
+                required
+              >
+            </div>
+
+            <button type="submit" id="btn-app-pw-submit" class="btn btn-secondary btn-block">
+              Sign In with App Password
+            </button>
+          </form>
+        </details>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Achievement Unlock Toast Stack (popover="manual" top-layer notifications) -->
+  <div id="ach-toast-stack" class="ach-toast-stack" aria-label="Achievement notifications"></div>
 
   <!-- Mobile Portrait Orientation Lock Splash (outside #app-shell so #app-shell can become inert) -->
   <aside id="rotate-splash" class="rotate-splash" role="dialog" aria-labelledby="rotate-title" hidden>
@@ -212,7 +582,7 @@
         <svg class="phone-rotate-svg" viewBox="0 0 120 120">
           <rect x="36" y="18" width="48" height="84" rx="10" fill="none" stroke="#FFFFFF" stroke-width="5"/>
           <circle cx="60" cy="91" r="3.5" fill="#FFFFFF"/>
-          <path fill="#7DD3FC" d="M60 54 C53 42, 39 34, 36 42 C33 50, 41 60, 50 62 C43 64, 40 72, 46 75 C52 78, 57 70, 60 64 C63 70, 68 78, 74 75 C80 72, 77 64, 70 62 C79 60, 87 50, 84 42 C81 34, 67 42, 60 54 Z"/>
+          <path fill="#7DD3FC" d="M60 54 C53 42, 39 34, 36 42 C33 50, 41 60, 50 62 C43 64, 40 72, 46 75 C52 78, 57 70, 60 64 C63 70, 68 78, 74 75 C80 60, 77 52, 70 50 C79 48, 87 38, 84 30 C81 34, 67 42, 60 54 Z"/>
         </svg>
       </div>
       <h2 id="rotate-title" class="rotate-heading">Rotate Your Device</h2>

@@ -334,4 +334,31 @@ export class AudioController {
     osc.start(now);
     osc.stop(now + 0.27);
   }
+
+  playAchievement() {
+    if (!this.sfxEnabled) return;
+    const ctx = this.ensureContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const notes = [523.25, 659.25, 783.99, 1174.66]; // C5 -> E5 -> G5 -> D6
+    notes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const start = now + idx * 0.068;
+      const dur = idx === notes.length - 1 ? 0.34 : 0.19;
+
+      osc.type = idx === notes.length - 1 ? 'triangle' : 'sine';
+      osc.frequency.setValueAtTime(freq, start);
+
+      gain.gain.setValueAtTime(0.001, start);
+      gain.gain.exponentialRampToValueAtTime(0.13, start + 0.016);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + dur);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + dur + 0.01);
+    });
+  }
 }

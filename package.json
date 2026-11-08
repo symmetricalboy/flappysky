@@ -1,13 +1,24 @@
 {
   "name": "flappysky",
-  "version": "1.0.0",
-  "description": "Flappysky — A Bluesky-inspired Flappy Bird web game for desktop and mobile",
+  "version": "1.1.0",
+  "description": "Flappysky — A Bluesky-inspired Flappy Bird web game powered by Open Gaming ATProto Achievements & Leaderboards",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=24.0.0"
   },
   "scripts": {
     "dev": "node server.mjs",
-    "start": "node server.mjs"
+    "start": "node server.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "publish-defs": "node scripts/publish-definitions.mjs"
+  },
+  "dependencies": {
+    "@atproto/api": "^0.15.0",
+    "@atproto/identity": "^0.4.0",
+    "@atproto/jwk-jose": "^0.2.4",
+    "@atproto/oauth-client-node": "^0.5.16",
+    "@ipld/dag-cbor": "^9.2.1",
+    "@opengaming/sdk": "file:./vendor/opengaming-sdk-0.1.0.tgz",
+    "multiformats": "^13.3.1"
   }
 }
